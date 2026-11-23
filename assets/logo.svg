@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Tarsier">
+  <title>Tarsier</title>
+  <defs>
+    <!-- White keeps the shape, black cuts it away, so the logo stays one colour. -->
+    <mask id="tarsier-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <!-- inner ears -->
+      <ellipse cx="44" cy="74" rx="17" ry="25" transform="rotate(-52 44 74)" fill="#000"/>
+      <ellipse cx="212" cy="74" rx="17" ry="25" transform="rotate(52 212 74)" fill="#000"/>
+      <!-- huge round eyes -->
+      <circle cx="78" cy="140" r="46" fill="#000"/>
+      <circle cx="178" cy="140" r="46" fill="#000"/>
+      <!-- tiny nose and smile -->
+      <ellipse cx="128" cy="197" rx="6" ry="4.5" fill="#000"/>
+      <path d="M114 206 q7 8 14 0 q7 8 14 0" fill="none" stroke="#000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g fill="currentColor">
+    <g mask="url(#tarsier-cutouts)">
+      <!-- big round ears splayed out to the sides -->
+      <ellipse cx="42" cy="72" rx="34" ry="44" transform="rotate(-52 42 72)"/>
+      <ellipse cx="214" cy="72" rx="34" ry="44" transform="rotate(52 214 72)"/>
+      <!-- wide, flat head -->
+      <ellipse cx="128" cy="150" rx="108" ry="82"/>
+    </g>
+    <!-- pupils, looking slightly inwards, each with a sparkle cut out -->
+    <path fill-rule="evenodd" d="M56 144a28 28 0 1 0 56 0a28 28 0 1 0 -56 0Z M66 135a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z"/>
+    <path fill-rule="evenodd" d="M144 144a28 28 0 1 0 56 0a28 28 0 1 0 -56 0Z M154 135a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z"/>
+  </g>
+</svg>
