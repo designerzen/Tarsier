@@ -84,6 +84,26 @@
 
   .note { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; color: var(--muted); }
 
+  .diagram { margin: 24px 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .diagram svg { display: block; width: 100%; height: auto; color: var(--text); }
+  .diagram svg text { fill: currentColor; font-family: inherit; font-size: 16px; }
+  .diagram .diagram-heading { font-weight: 700; font-size: 19px; }
+  .diagram .diagram-small { font-size: 14px; }
+  .diagram .diagram-box { fill: var(--code); stroke: var(--line); stroke-width: 2; }
+  .diagram .diagram-line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .diagram .diagram-accent { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .diagram .diagram-zone { fill: var(--accent); fill-opacity: 0.08; stroke: var(--accent); stroke-width: 1; }
+  .diagram figcaption { margin-top: 16px; color: var(--muted); font-size: 0.95rem; }
+  .diagram-scroll { overflow-x: auto; }
+  .diagram-scroll svg { min-width: 600px; }
+  .diagram-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .diagram-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .diagram-pair .diagram { margin: 0; }
+  @media (max-width: 600px) {
+    .diagram { padding: 12px; }
+    .diagram-pair { grid-template-columns: 1fr; }
+  }
+
   #monitor-status { font-weight: 600; }
   #monitor-status.ok { color: var(--ok); }
   #monitor-log { font: 14px/1.5 ui-monospace, Consolas, monospace; background: var(--code); border-radius: 10px; padding: 12px; height: 180px; overflow-y: auto; margin: 12px 0 0; white-space: pre-wrap; }
@@ -144,6 +164,31 @@
     <li>A computer, tablet or phone with a USB-A port, or an adapter (USB-C to USB-A works fine).</li>
     <li>Something that makes sound from MIDI: a DAW such as GarageBand, Ableton Live, Logic or Reaper, a software synth, or a browser synth. Free options include <a href="https://tytel.org/helm/">Helm</a>, <a href="https://vcvrack.com/">VCV Rack</a> and <a href="https://puredata.info/">Pure Data</a>.</li>
   </ul>
+  <figure class="diagram diagram-scroll" tabindex="0" aria-label="Movement to sound diagram; scroll sideways on small screens">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 260" role="img" aria-labelledby="setup-title setup-desc">
+      <title id="setup-title">From movement to sound</title>
+      <desc id="setup-desc">Move over Tarsier, connected by USB to your computer, tablet or phone. Select Tarsier as the MIDI input and load an instrument in your music app. The app produces sound through speakers or headphones.</desc>
+      <rect class="diagram-box" x="10" y="36" width="180" height="152" rx="14"/>
+      <text x="100" y="69" text-anchor="middle" class="diagram-heading">1. Tarsier</text>
+      <path class="diagram-accent" d="M68 96h64m-56 13h48m-40 13h32"/>
+      <rect class="diagram-line" x="59" y="139" width="82" height="24" rx="6"/>
+      <text x="100" y="218" text-anchor="middle" class="diagram-small">Move above the sensor</text>
+      <path class="diagram-accent" d="M198 113h53m-9-7 9 7-9 7"/>
+      <text x="225" y="96" text-anchor="middle" class="diagram-small">USB</text>
+      <rect class="diagram-box" x="260" y="36" width="220" height="152" rx="14"/>
+      <text x="370" y="69" text-anchor="middle" class="diagram-heading">2. Music app</text>
+      <text x="370" y="105" text-anchor="middle">MIDI input: Tarsier</text>
+      <text x="370" y="135" text-anchor="middle">Load an instrument</text>
+      <text x="370" y="218" text-anchor="middle" class="diagram-small">Computer, tablet or phone</text>
+      <path class="diagram-accent" d="M488 113h53m-9-7 9 7-9 7"/>
+      <rect class="diagram-box" x="550" y="36" width="140" height="152" rx="14"/>
+      <text x="620" y="69" text-anchor="middle" class="diagram-heading">3. Listen</text>
+      <path class="diagram-line" d="M585 116h13l18-17v50l-18-17h-13z M630 112q12 12 0 24m10-34q22 22 0 44"/>
+      <text x="620" y="218" text-anchor="middle" class="diagram-small">Speakers or</text>
+      <text x="620" y="238" text-anchor="middle" class="diagram-small">headphones</text>
+    </svg>
+    <figcaption>Tarsier sends MIDI instructions. Your music app makes the sound. A USB adapter may be needed for your tablet or phone.</figcaption>
+  </figure>
 </section>
 
 <section id="install">
@@ -174,6 +219,53 @@
   <h2>Play</h2>
   <p>The sensor between the two lights looks upwards. Move a hand straight down towards it and back up again. The beam starts about a hand's width above the board, and the closer you get, the higher the note.</p>
 
+  <div class="diagram-pair">
+    <figure class="diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 390" role="img" aria-labelledby="beam-title beam-desc">
+        <title id="beam-title">Move closer to play higher notes</title>
+        <desc id="beam-desc">Side view in Beam mode. The sensor faces upwards. Note zones above it run from lower notes at the far edge to higher notes near the board. Move down or up to change notes; remove your hand from the sensing area to stop.</desc>
+        <text x="16" y="30" class="diagram-heading">Move to change notes</text>
+        <text x="16" y="58" class="diagram-small">Side view · Beam mode</text>
+        <path class="diagram-line" d="M95 104c-13-6-25-5-37-1l-29 12c-8 4-4 13 4 11l23-6-14 17c-5 7 4 13 10 8l19-14h24m-1-27h18v28H94"/>
+        <rect class="diagram-zone" x="45" y="161" width="100" height="32" rx="3"/>
+        <rect class="diagram-zone" x="45" y="197" width="100" height="32" rx="3"/>
+        <rect class="diagram-zone" x="45" y="233" width="100" height="32" rx="3"/>
+        <rect class="diagram-zone" x="45" y="269" width="100" height="32" rx="3"/>
+        <text x="160" y="182">Farther: lower</text>
+        <text x="160" y="290">Closer: higher</text>
+        <path class="diagram-accent" d="M26 168v125m-6-8 6 8 6-8 M315 293V168m-6 8 6-8 6 8"/>
+        <rect class="diagram-box" x="43" y="322" width="104" height="22" rx="6"/>
+        <path class="diagram-accent" d="M87 322v-9h16v9"/>
+        <text x="160" y="339">Sensor faces up</text>
+        <text x="16" y="378" class="diagram-small">Illustrated zones · not to scale</text>
+      </svg>
+      <figcaption>Each new zone plays a note. Reverse direction to play back down the scale. The default is 8 zones; the sensing range varies with your surroundings.</figcaption>
+    </figure>
+    <figure class="diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 390" role="img" aria-labelledby="trigger-title trigger-desc">
+        <title id="trigger-title">Enter to start, leave to stop</title>
+        <desc id="trigger-desc">In Trigger mode, entering the sensing area starts one note. Keeping your hand inside holds that note; removing it sends note off. Enter again to trigger another note. The receiving instrument determines how the sound decays.</desc>
+        <text x="16" y="30" class="diagram-heading">Start and stop a note</text>
+        <text x="16" y="58" class="diagram-small">Trigger mode</text>
+        <rect class="diagram-box" x="16" y="85" width="308" height="68" rx="10"/>
+        <path class="diagram-accent" d="M46 99v37m-7-9 7 9 7-9"/>
+        <text x="76" y="113" class="diagram-heading">Enter the beam</text>
+        <text x="76" y="138">Note starts</text>
+        <rect class="diagram-box" x="16" y="166" width="308" height="68" rx="10"/>
+        <circle class="diagram-line" cx="46" cy="200" r="10"/>
+        <text x="76" y="194" class="diagram-heading">Stay inside</text>
+        <text x="76" y="219">Note stays held</text>
+        <rect class="diagram-box" x="16" y="247" width="308" height="68" rx="10"/>
+        <path class="diagram-accent" d="M46 300v-37m-7 9 7-9 7 9"/>
+        <text x="76" y="275" class="diagram-heading">Move away</text>
+        <text x="76" y="300">Note stops</text>
+        <text x="16" y="354">Enter again to play again.</text>
+        <text x="16" y="378" class="diagram-small">Drum samples may ring out naturally.</text>
+      </svg>
+      <figcaption>Tap pad 1 until the mode light is orange for Trigger mode. In Beam and Theremin modes, leaving the beam also stops the held note.</figcaption>
+    </figure>
+  </div>
+
   <h3>Modes</h3>
   <p>Tap pad 1 to switch modes. Pad 1 is the touch pad at the end of the board, on the same side as light 0.</p>
   <div class="table-wrap"><table>
@@ -187,6 +279,33 @@
   </table></div>
 
   <h3>Touch pad controls</h3>
+  <figure class="diagram diagram-scroll" tabindex="0" aria-label="Touch controls diagram; scroll sideways on small screens">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 340" role="img" aria-labelledby="pads-title pads-desc">
+      <title id="pads-title">Touch pads and light feedback</title>
+      <desc id="pads-desc">Simplified layout, not a physical board map. Pad 1 changes mode on a tap and octave on a hold of 0.6 seconds. Its nearby light 0 shows the mode. Pad 2 changes scale on a tap and the number of zones on a hold of 0.6 seconds. Its nearby light 1 shows hand position and flashes white on a note. Hold both pads for one second to stop all notes, then release and clear the sensor for recalibration.</desc>
+      <text x="175" y="30" text-anchor="middle" class="diagram-heading">Pad 1 · Mode &amp; octave</text>
+      <text x="525" y="30" text-anchor="middle" class="diagram-heading">Pad 2 · Scale &amp; zones</text>
+      <rect class="diagram-box" x="20" y="53" width="660" height="110" rx="24"/>
+      <circle class="diagram-line" cx="100" cy="108" r="31"/>
+      <text x="100" y="114" text-anchor="middle" class="diagram-heading">1</text>
+      <circle cx="216" cy="108" r="17" fill="#00c040" stroke="currentColor" stroke-width="2"/>
+      <rect class="diagram-line" x="330" y="88" width="40" height="40" rx="6"/>
+      <circle cx="484" cy="108" r="17" fill="#ffffff" stroke="currentColor" stroke-width="2"/>
+      <circle class="diagram-line" cx="600" cy="108" r="31"/>
+      <text x="600" y="114" text-anchor="middle" class="diagram-heading">2</text>
+      <text x="216" y="147" text-anchor="middle" class="diagram-small">Mode light 0</text>
+      <text x="350" y="147" text-anchor="middle" class="diagram-small">Sensor</text>
+      <text x="484" y="147" text-anchor="middle" class="diagram-small">Beam light 1</text>
+      <text x="175" y="195" text-anchor="middle">Tap: next mode</text>
+      <text x="175" y="220" text-anchor="middle">Hold 0.6 s: next octave</text>
+      <text x="525" y="195" text-anchor="middle">Tap: next scale</text>
+      <text x="525" y="220" text-anchor="middle">Hold 0.6 s: next zone count</text>
+      <path class="diagram-accent" d="M100 239v16h500v-16"/>
+      <text x="350" y="286" text-anchor="middle" class="diagram-heading">Hold both 1 s: stop all notes</text>
+      <text x="350" y="314" text-anchor="middle">Release, move hands away, wait for the green blink.</text>
+    </svg>
+    <figcaption>Simplified layout, not a physical board map. Use the pad numbers on your Trinkey. Light 0 shows the mode; light 1 brightens as you move closer and flashes white when a note starts. After holding both pads, keep the sensor clear while it recalibrates.</figcaption>
+  </figure>
   <div class="table-wrap"><table>
     <thead><tr><th>Do this</th><th>To</th><th>The lights</th></tr></thead>
     <tbody>
