@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.svg" alt="Tarsier logo: a round tarsier face with huge eyes" width="160"></p>
+
 # Tarsier
 
 Tarsier is an accessible music instrument you play by moving a hand through the
@@ -161,6 +163,11 @@ Every push and pull request builds the firmware on GitHub
 with `v` (for example `v1.0.0`), the UF2 and BIN files are also attached to a
 GitHub release for that tag. You can also start a build by hand from the
 **Actions** tab.
+
+Each push to `master` also publishes the project page in [`site/`](site/index.html)
+to GitHub Pages, with that build's `Tarsier.uf2` alongside it. Before the
+first deploy, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+The page will then be at <https://designerzen.github.io/Tarsier/>.
 
 On Windows, if the compiler reports a missing header such as
 `machine/_default_types.h`, the Arduino data folder path is too long for the
