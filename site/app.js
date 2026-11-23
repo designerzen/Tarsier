@@ -25,7 +25,11 @@
   // ----------------------------------------------------------- Simulator
   // Mirrors firmware/Tarsier/Tarsier.ino so the page shows what the device does.
   const sim = document.getElementById("sim");
-  if (sim) initSimulator();
+  let simApi = null;
+  if (sim) {
+    simApi = initSimulator();
+    initCamera(simApi);
+  }
 
   function initSimulator() {
     const MODES = [
@@ -310,8 +314,9 @@
       setLed(1, c, (12 + state.intensity * (90 - 12)) / 255);
     }
 
-    // ---- hand position: pointer, slider or a gentle demo
+    // ---- hand position: camera, pointer, slider or a gentle demo
     let handY = 230, targetY = 230, lastManualAt = -1e9;
+    let external = null, externalAt = -1e9;  // 0..1 from the camera, or null when out of the beam
     const sliderToY = (v) => Y_TOP + (v / 100) * (Y_NEAR - Y_TOP);
     const yToSlider = (y) => Math.round(((y - Y_TOP) / (Y_NEAR - Y_TOP)) * 100);
     targetY = handY = sliderToY(Number(slider.value));
@@ -375,8 +380,12 @@
       last = now;
       if (!visible) return;
 
-      // Demo mode: drift in and out of the beam until someone takes over.
-      if (now - lastManualAt > 5000 && !reduceMotion.matches) {
+      // The camera wins while it is reporting; otherwise drift in and out of
+      // the beam as a demo until someone takes over.
+      if (now - externalAt < 500) {
+        targetY = external === null ? Y_TOP : Y_EDGE + external * (Y_NEAR - Y_EDGE);
+        lastManualAt = now;
+      } else if (now - lastManualAt > 5000 && !reduceMotion.matches) {
         const t = now / 1000;
         targetY = clamp(220 + 175 * Math.sin(t * 0.7) + 25 * Math.sin(t * 1.9), Y_TOP, Y_NEAR);
       }
@@ -468,6 +477,165 @@
     showToast(MODES[0].colour, 1);
     log("Ready. Move into the beam.");
     requestAnimationFrame(frame);
+
+    return {
+      // Called by the camera with how far into the beam the hand is (0..1), or null.
+      setHand(value) { external = value; externalAt = performance.now(); },
+    };
+  }
+
+  // ------------------------------------------------------- Hand tracking
+  // Turns the webcam into the sensor using MediaPipe's hand landmarker,
+  // which runs locally in the browser. It is only downloaded when asked for.
+  function initCamera(api) {
+    const MEDIAPIPE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    const MODEL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+    // Apparent palm size (fraction of the picture height) at the edge of the
+    // beam and when nearest. Size falls with distance, so like the firmware we
+    // convert to distance before mapping, which spaces the zones evenly.
+    const SIZE_EDGE = 0.13, SIZE_NEAR = 0.45;
+    // Palm height in the picture (0 = top) at the edge of the beam and nearest.
+    const HEIGHT_EDGE = 0.15, HEIGHT_NEAR = 0.85;
+
+    const button = document.getElementById("sim-camera");
+    const panel = document.getElementById("sim-cam");
+    const video = document.getElementById("cam-video");
+    const canvas = document.getElementById("cam-canvas");
+    const statusEl = document.getElementById("cam-status");
+    const meterEl = document.getElementById("cam-meter");
+    const g = canvas.getContext("2d");
+
+    let vision = null, landmarker = null, stream = null, running = false, lastTime = -1;
+    let smoothed = null;
+
+    const setStatus = (text) => { if (statusEl.textContent !== text) statusEl.textContent = text; };
+    const mapping = () => panel.querySelector('input[name="cam-map"]:checked').value;
+    panel.querySelectorAll('input[name="cam-map"]').forEach((r) => r.addEventListener("change", () => { smoothed = null; }));
+
+    button.addEventListener("click", () => (running ? stop() : start()));
+
+    async function start() {
+      if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        panel.hidden = false;
+        setStatus("This browser can't use a camera here. Open the page over https in a current browser.");
+        return;
+      }
+      panel.hidden = false;
+      button.setAttribute("aria-pressed", "true");
+      button.textContent = "Stop camera";
+      try {
+        if (!landmarker) {
+          setStatus("Loading hand tracking…");
+          vision = await import(`${MEDIAPIPE}/vision_bundle.mjs`);
+          const files = await vision.FilesetResolver.forVisionTasks(`${MEDIAPIPE}/wasm`);
+          const options = (delegate) => ({
+            baseOptions: { modelAssetPath: MODEL, delegate },
+            runningMode: "VIDEO",
+            numHands: 1,
+            minHandDetectionConfidence: 0.6,
+            minHandPresenceConfidence: 0.6,
+            minTrackingConfidence: 0.5,
+          });
+          try { landmarker = await vision.HandLandmarker.createFromOptions(files, options("GPU")); }
+          catch (e) { landmarker = await vision.HandLandmarker.createFromOptions(files, options("CPU")); }
+        }
+        setStatus("Waiting for the camera…");
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        running = true;
+        smoothed = null;
+        requestAnimationFrame(track);
+      } catch (err) {
+        const denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+        const missing = err && (err.name === "NotFoundError" || err.name === "OverconstrainedError");
+        setStatus(denied ? "Camera permission was refused. Allow the camera for this page and try again."
+          : missing ? "No camera was found."
+          : "Hand tracking couldn't start: " + (err && err.message ? err.message : err));
+        stop(true);
+      }
+    }
+
+    function stop(keepMessage) {
+      running = false;
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+      video.srcObject = null;
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      meterEl.style.width = "0%";
+      button.setAttribute("aria-pressed", "false");
+      button.textContent = "Use your camera";
+      if (!keepMessage) panel.hidden = true;
+    }
+
+    function track() {
+      if (!running) return;
+      requestAnimationFrame(track);
+      if (video.readyState < 2 || video.currentTime === lastTime) return;
+      lastTime = video.currentTime;
+      const result = landmarker.detectForVideo(video, performance.now());
+      const hand = result.landmarks && result.landmarks[0];
+      draw(hand);
+
+      if (!hand) {
+        smoothed = null;
+        api.setHand(null);
+        meterEl.style.width = "0%";
+        setStatus("Show an open hand to the camera.");
+        return;
+      }
+
+      let value;
+      if (mapping() === "distance") {
+        // Palm size: the largest span between the wrist and the knuckles,
+        // corrected for the picture's shape so turning the hand matters less.
+        const aspect = video.videoWidth / video.videoHeight;
+        const span = (a, b) => Math.hypot((hand[a].x - hand[b].x) * aspect, hand[a].y - hand[b].y);
+        const size = Math.max(span(0, 5), span(0, 17), span(5, 17), span(0, 9));
+        value = size < SIZE_EDGE ? null
+          : 1 - (1 / size - 1 / SIZE_NEAR) / (1 / SIZE_EDGE - 1 / SIZE_NEAR);
+      } else {
+        const y = [0, 5, 9, 13, 17].reduce((sum, i) => sum + hand[i].y, 0) / 5;
+        value = y < HEIGHT_EDGE ? null : (y - HEIGHT_EDGE) / (HEIGHT_NEAR - HEIGHT_EDGE);
+      }
+
+      if (value === null) {
+        smoothed = null;
+        api.setHand(null);
+        meterEl.style.width = "0%";
+        setStatus(mapping() === "distance" ? "Hand seen, but outside the beam. Move it closer." : "Hand seen, but above the beam. Move it lower.");
+        return;
+      }
+      value = clamp(value, 0, 1);
+      smoothed = smoothed === null ? value : smoothed + 0.45 * (value - smoothed);
+      api.setHand(smoothed);
+      meterEl.style.width = (smoothed * 100).toFixed(1) + "%";
+      setStatus(`In the beam: ${Math.round(smoothed * 100)}% of the way in.`);
+    }
+
+    function draw(hand) {
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      if (!hand) return;
+      const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#f2a965";
+      const W = canvas.width, H = canvas.height;
+      g.lineWidth = Math.max(2, W / 160);
+      g.strokeStyle = accent;
+      g.lineCap = "round";
+      for (const { start, end } of vision.HandLandmarker.HAND_CONNECTIONS) {
+        g.beginPath();
+        g.moveTo(hand[start].x * W, hand[start].y * H);
+        g.lineTo(hand[end].x * W, hand[end].y * H);
+        g.stroke();
+      }
+      g.fillStyle = "#ffffff";
+      for (const p of hand) {
+        g.beginPath();
+        g.arc(p.x * W, p.y * H, Math.max(2.5, W / 140), 0, Math.PI * 2);
+        g.fill();
+      }
+    }
   }
 
   // ------------------------------------------------------------- Tester

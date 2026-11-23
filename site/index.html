@@ -252,6 +252,7 @@
   <span class="eyebrow">Try it</span>
   <h2>A Tarsier in your browser</h2>
   <p class="lead">This simulator follows the same rules as the firmware. Move over the beam (or use the slider) to play, switch modes, and tap or hold the touch pads on the board picture. The lights behave as they do on the real thing.</p>
+  <p>No Trinkey yet? Press <strong>Use your camera</strong> and your webcam becomes the sensor: hand tracking follows your hand, and moving it towards the camera plays the beam just like moving towards a real Tarsier.</p>
 
   <div class="card sim" id="sim">
     <div class="sim-bar">
@@ -261,7 +262,26 @@
         <button type="button" class="mode-btn" data-mode="2" aria-pressed="false"><span class="dot" style="background:#a000ff"></span>Theremin</button>
         <button type="button" class="mode-btn" data-mode="3" aria-pressed="false"><span class="dot" style="background:#0060ff"></span>CC</button>
       </div>
-      <button type="button" class="button secondary sound-btn" id="sim-sound" aria-pressed="false">Sound: off</button>
+      <div class="bar-actions">
+        <button type="button" class="button secondary sound-btn" id="sim-camera" aria-pressed="false" aria-controls="sim-cam">Use your camera</button>
+        <button type="button" class="button secondary sound-btn" id="sim-sound" aria-pressed="false">Sound: off</button>
+      </div>
+    </div>
+    <div class="cam" id="sim-cam" hidden>
+      <div class="cam-view">
+        <video id="cam-video" playsinline muted></video>
+        <canvas id="cam-canvas" aria-hidden="true"></canvas>
+      </div>
+      <div class="cam-side">
+        <p class="cam-status" id="cam-status" role="status">Starting…</p>
+        <fieldset class="cam-map">
+          <legend>Play by</legend>
+          <label><input type="radio" name="cam-map" value="distance" checked> Distance to the camera <span>Like the real sensor: closer plays higher.</span></label>
+          <label><input type="radio" name="cam-map" value="height"> Height in the picture <span>Easier to control: lower plays higher.</span></label>
+        </fieldset>
+        <div class="vel-row"><span>In the beam</span><div class="meter"><div id="cam-meter"></div></div></div>
+        <p class="cam-note">Hold an open hand up to the camera. Take it out of view, or far back, to leave the beam. The video stays in your browser and is never recorded or uploaded.</p>
+      </div>
     </div>
     <div class="sim-body">
       <div class="sim-stage">
