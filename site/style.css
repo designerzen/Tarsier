@@ -310,6 +310,11 @@ details p { color: var(--muted); }
 
 footer { margin-top: 80px; padding: 28px 16px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.95rem; text-align: center; }
 footer svg { width: 36px; height: 36px; color: var(--accent); display: block; margin: 0 auto 10px; }
+footer .footer-brand { display: flex; align-items: center; justify-content: center; gap: 12px; width: fit-content; max-width: 100%; margin: 22px auto 0; }
+.footer-brand img { display: block; flex-shrink: 0; }
+@media (prefers-color-scheme: dark) {
+  .footer-brand img { filter: invert(1); }
+}
 
 /* ----------------------------------------------------------- Responsive */
 @media (max-width: 820px) {
