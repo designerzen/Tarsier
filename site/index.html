@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarsier</title>
+<meta name="description" content="Tarsier turns the Adafruit Proximity Trinkey into an accessible, Soundbeam-style MIDI instrument you play by moving through the air.">
+<link rel="icon" type="image/svg+xml" href="logo-small.svg">
+<style>
+  :root {
+    --bg: #fbf7f0;
+    --surface: #ffffff;
+    --text: #2b2118;
+    --muted: #6d5f52;
+    --line: #e7ddcf;
+    --accent: #8a4b1c;
+    --accent-text: #ffffff;
+    --code: #f3ece2;
+    --ok: #2f7d4f;
+    --radius: 14px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17130f;
+      --surface: #211b16;
+      --text: #f2e9de;
+      --muted: #b4a594;
+      --line: #3a3029;
+      --accent: #f0a868;
+      --accent-text: #1c140d;
+      --code: #2b231c;
+      --ok: #7fd6a2;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 16px 64px; }
+  a { color: var(--accent); }
+  h1, h2, h3 { line-height: 1.2; }
+  h2 { margin-top: 56px; font-size: 1.6rem; }
+  h3 { margin-top: 28px; font-size: 1.15rem; }
+  code, kbd { font: 0.9em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--code); padding: 0.1em 0.35em; border-radius: 5px; }
+
+  .hero { text-align: center; padding: 56px 0 24px; }
+  .logo { display: block; margin: 0 auto 16px; width: 168px; height: 168px; color: var(--accent); }
+  .hero h1 { font-size: clamp(2.4rem, 8vw, 3.6rem); margin: 0; letter-spacing: -0.02em; }
+  .tagline { font-size: 1.2rem; color: var(--muted); max-width: 560px; margin: 8px auto 24px; }
+  .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .button {
+    display: inline-block; padding: 12px 22px; border-radius: 999px; font-weight: 600;
+    text-decoration: none; border: 2px solid var(--accent);
+  }
+  .button.primary { background: var(--accent); color: var(--accent-text); }
+  .button.secondary { color: var(--accent); }
+
+  nav { display: flex; gap: 6px 18px; flex-wrap: wrap; justify-content: center; padding: 12px 0; border-block: 1px solid var(--line); margin-top: 32px; }
+  nav a { text-decoration: none; font-weight: 500; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .grid .card h3 { margin-top: 0; }
+
+  ol.steps { counter-reset: step; list-style: none; padding: 0; }
+  ol.steps > li { counter-increment: step; position: relative; padding: 0 0 20px 52px; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: -2px;
+    width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-text);
+    display: grid; place-items: center; font-weight: 700;
+  }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  .dot { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 50%; vertical-align: -0.1em; margin-right: 6px; }
+
+  .note { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; color: var(--muted); }
+
+  #monitor-status { font-weight: 600; }
+  #monitor-status.ok { color: var(--ok); }
+  #monitor-log { font: 14px/1.5 ui-monospace, Consolas, monospace; background: var(--code); border-radius: 10px; padding: 12px; height: 180px; overflow-y: auto; margin: 12px 0 0; white-space: pre-wrap; }
+  .meter { height: 14px; border-radius: 999px; background: var(--code); overflow: hidden; margin-top: 12px; }
+  .meter > div { height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
+  button.button { cursor: pointer; font: inherit; font-weight: 600; }
+
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.95rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <!-- Copy of assets/logo.svg, inlined so it takes the accent colour. -->
+  <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Tarsier logo">
+    <defs>
+      <!-- White keeps the shape, black cuts it away, so the logo stays one colour. -->
+      <mask id="tarsier-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+        <rect width="256" height="256" fill="#fff"/>
+        <!-- inner ears -->
+        <ellipse cx="44" cy="74" rx="17" ry="25" transform="rotate(-52 44 74)" fill="#000"/>
+        <ellipse cx="212" cy="74" rx="17" ry="25" transform="rotate(52 212 74)" fill="#000"/>
+        <!-- huge round eyes -->
+        <circle cx="78" cy="140" r="46" fill="#000"/>
+        <circle cx="178" cy="140" r="46" fill="#000"/>
+        <!-- tiny nose and smile -->
+        <ellipse cx="128" cy="197" rx="6" ry="4.5" fill="#000"/>
+        <path d="M114 206 q7 8 14 0 q7 8 14 0" fill="none" stroke="#000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </mask>
+    </defs>
+    <g fill="currentColor">
+      <g mask="url(#tarsier-cutouts)">
+        <!-- big round ears splayed out to the sides -->
+        <ellipse cx="42" cy="72" rx="34" ry="44" transform="rotate(-52 42 72)"/>
+        <ellipse cx="214" cy="72" rx="34" ry="44" transform="rotate(52 214 72)"/>
+        <!-- wide, flat head -->
+        <ellipse cx="128" cy="150" rx="108" ry="82"/>
+      </g>
+      <!-- pupils, looking slightly inwards, each with a sparkle cut out -->
+      <path fill-rule="evenodd" d="M56 144a28 28 0 1 0 56 0a28 28 0 1 0 -56 0Z M66 135a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z"/>
+      <path fill-rule="evenodd" d="M144 144a28 28 0 1 0 56 0a28 28 0 1 0 -56 0Z M154 135a9 9 0 1 0 18 0a9 9 0 1 0 -18 0Z"/>
+    </g>
+  </svg>
+  <h1>Tarsier</h1>
+  <p class="tagline">An accessible music instrument you play by moving through the air. A Drake Music project for the Adafruit Proximity Trinkey.</p>
+  <div class="buttons">
+    <a class="button primary" href="Tarsier.uf2" download>Download firmware</a>
+    <a class="button secondary" href="https://github.com/designerzen/Tarsier">Source on GitHub</a>
+  </div>
+</header>
+
+<nav aria-label="Sections">
+  <a href="#what">What it is</a>
+  <a href="#need">What you need</a>
+  <a href="#install">Install</a>
+  <a href="#test">Test it</a>
+  <a href="#play">Play</a>
+  <a href="#lights">Lights</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+</nav>
+
+<section id="what">
+  <h2>What it is</h2>
+  <p>Tarsier is firmware for the <a href="https://www.adafruit.com/product/5022">Adafruit Proximity Trinkey</a>, a tiny USB board with an infrared proximity sensor. Plug it into a computer, tablet or phone, then move a hand (or an elbow, a foot, a head) above it to play notes, bend pitch or sweep a controller. No touch, strength or fine finger control needed.</p>
+  <p>It shows up as a standard USB MIDI device called <strong>Tarsier</strong>, so it works without drivers in any DAW, synth or music app that accepts MIDI. It grew out of a 2015 <a href="https://www.drakemusic.org/">Drake Music</a> project and follows the idea behind instruments like Soundbeam: any movement can make music, and every note sounds good.</p>
+  <div class="grid">
+    <div class="card"><h3>Touch-free</h3>Play by moving through an invisible beam above the sensor.</div>
+    <div class="card"><h3>Always in tune</h3>Notes are laid out on a scale, so nothing sounds wrong.</div>
+    <div class="card"><h3>Expressive</h3>Move faster to play louder; move closer to play higher.</div>
+    <div class="card"><h3>Shows what it's doing</h3>Two lights show the mode, your hand's position and every note.</div>
+  </div>
+</section>
+
+<section id="need">
+  <h2>What you need</h2>
+  <ul>
+    <li>An <a href="https://www.adafruit.com/product/5022">Adafruit Proximity Trinkey</a>.</li>
+    <li>A computer, tablet or phone with a USB-A port, or an adapter (USB-C to USB-A works fine).</li>
+    <li>Something that makes sound from MIDI: a DAW such as GarageBand, Ableton Live, Logic or Reaper, a software synth, or a browser synth. Free options include <a href="https://tytel.org/helm/">Helm</a>, <a href="https://vcvrack.com/">VCV Rack</a> and <a href="https://puredata.info/">Pure Data</a>.</li>
+  </ul>
+</section>
+
+<section id="install">
+  <h2>Install</h2>
+  <p>Installing takes about a minute and needs no software. You copy one file onto the board, much like copying a file onto a USB stick.</p>
+  <ol class="steps">
+    <li><strong>Download the firmware.</strong> <a href="Tarsier.uf2" download>Download <code>Tarsier.uf2</code></a>. Tagged versions are also on the <a href="https://github.com/designerzen/Tarsier/releases">releases page</a>.</li>
+    <li><strong>Plug in the Trinkey.</strong> Push it into a USB port with the lights and sensor facing up.</li>
+    <li><strong>Double-tap the reset button.</strong> It's the small button near the USB plug. Tap it twice quickly. The lights turn green and a drive called <code>TRINKEYBOOT</code> appears on your computer.</li>
+    <li><strong>Copy <code>Tarsier.uf2</code> onto <code>TRINKEYBOOT</code>.</strong> Drag it across like any other file. The drive disappears by itself once the copy finishes. That's normal and means it worked.</li>
+    <li><strong>Done.</strong> The Trinkey restarts as <strong>Tarsier</strong> and the light near pad 1 starts slowly breathing green. Choose <strong>Tarsier</strong> as the MIDI input in your music software.</li>
+  </ol>
+  <p class="note">To put CircuitPython or other firmware back later, double-tap reset and copy that firmware's <code>.uf2</code> onto <code>TRINKEYBOOT</code> in the same way.</p>
+</section>
+
+<section id="test">
+  <h2>Test it in your browser</h2>
+  <p>Check that Tarsier is working before opening any music software. This tester runs in Chrome, Edge, Opera and Firefox, but not in Safari. Your browser will ask for permission to use MIDI devices.</p>
+  <div class="card">
+    <button class="button primary" id="monitor-start" type="button">Connect to Tarsier</button>
+    <p>Status: <span id="monitor-status">not connected</span></p>
+    <div class="meter" aria-hidden="true"><div id="monitor-meter"></div></div>
+    <pre id="monitor-log" aria-live="polite">Move your hand over the sensor once connected…</pre>
+  </div>
+</section>
+
+<section id="play">
+  <h2>Play</h2>
+  <p>The sensor between the two lights looks upwards. Move a hand straight down towards it and back up again. The beam starts about a hand's width above the board, and the closer you get, the higher the note.</p>
+
+  <h3>Modes</h3>
+  <p>Tap pad 1 to switch modes. Pad 1 is the touch pad at the end of the board, on the same side as light 0.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Mode</th><th>Colour</th><th>What happens</th><th>Good for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Beam</strong></td><td><span class="dot" style="background:#00c040"></span>green</td><td>The beam is split into note zones on a scale. Each time you cross into a new zone, its note plays.</td><td>Melodies, exploring sound</td></tr>
+      <tr><td><strong>2. Trigger</strong></td><td><span class="dot" style="background:#ff7a1a"></span>orange</td><td>One note plays when your hand enters the beam and stops when it leaves.</td><td>Drums, samples, cues</td></tr>
+      <tr><td><strong>3. Theremin</strong></td><td><span class="dot" style="background:#a040ff"></span>violet</td><td>A note plays on entry, then its pitch slides as you move.</td><td>Sirens, swoops, leads</td></tr>
+      <tr><td><strong>4. CC</strong></td><td><span class="dot" style="background:#2f7bff"></span>blue</td><td>A controller (CC 1, the mod wheel) goes from 0 at the edge of the beam to 127 up close.</td><td>Filters, effects, volume</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Touch pad controls</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Do this</th><th>To</th><th>The lights</th></tr></thead>
+    <tbody>
+      <tr><td>Tap pad 1</td><td>Change mode</td><td>Blink the mode's colour: 1 blink for Beam, up to 4 for CC</td></tr>
+      <tr><td>Tap pad 2</td><td>Change scale</td><td>Blink once per scale number (list below)</td></tr>
+      <tr><td>Hold pad 1 for about half a second</td><td>Change octave (2, 3, <strong>4</strong>, 5)</td><td>White blinks: 1 = lowest octave</td></tr>
+      <tr><td>Hold pad 2 for about half a second</td><td>Change the number of note zones (5, <strong>8</strong>, 12, 16)</td><td>Amber blinks: 1 = 5 zones</td></tr>
+      <tr><td>Hold both pads for 1 second</td><td>Stop all sound, then recalibrate</td><td>3 red blinks. Let go and keep your hands away; 1 green blink means it's ready</td></tr>
+    </tbody>
+  </table></div>
+  <p>Scales, in order: 1 major pentatonic (default), 2 minor pentatonic, 3 major, 4 natural minor, 5 blues, 6 whole tone, 7 chromatic. Bold values above are the defaults.</p>
+
+  <h3>Tips</h3>
+  <ul>
+    <li><strong>Start with Beam mode and 5 zones.</strong> Fewer zones make each note easier to find.</li>
+    <li><strong>Speed sets loudness.</strong> A quick sweep plays loud; a slow drift plays soft.</li>
+    <li><strong>Theremin mode:</strong> set your synth's pitch-bend range to 12 semitones. With the usual 2, the whole beam covers only a tone.</li>
+    <li><strong>Keep the space above clear.</strong> A low shelf or lampshade can look like a hand. Place the board where nothing hangs over it, then hold both pads to recalibrate.</li>
+    <li><strong>Mount it where the player can reach.</strong> Tape it to a tray, armrest or table edge, so whatever part of the body moves most freely can pass over it.</li>
+  </ul>
+</section>
+
+<section id="lights">
+  <h2>Reading the lights</h2>
+  <p>Light 0 (by pad 1) shows the <strong>mode</strong>. Light 1 (by pad 2) shows the <strong>beam</strong>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>You see</th><th>It means</th></tr></thead>
+    <tbody>
+      <tr><td>Mode light slowly breathing</td><td>Ready and waiting. The colour shows the mode.</td></tr>
+      <tr><td>Beam light glowing</td><td>A hand is in the beam. Brighter means closer. In Beam mode each note zone has its own colour.</td></tr>
+      <tr><td>Beam light flashes white</td><td>A note was just played.</td></tr>
+      <tr><td>Mode light pulsing amber</td><td>Not connected to a computer, or the computer is asleep.</td></tr>
+      <tr><td>Both lights blinking red quickly</td><td>The sensor isn't responding. Unplug the board and plug it back in.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <h3><code>TRINKEYBOOT</code> doesn't appear</h3>
+  <p>Double-tap the reset button a little faster or slower; the timing matters. Also try another USB port or adapter, because some cables and hubs only carry power.</p>
+  <h3>Tarsier doesn't appear in my music software</h3>
+  <p>Restart the software after plugging Tarsier in; many apps only look for MIDI devices when they start. On Windows, if it still appears under its old name ("ProxLight Trinkey"), remove it in Device Manager and plug it in again.</p>
+  <h3>Notes play by themselves</h3>
+  <p>Something above the sensor is being seen as a hand. Clear the space above the board, then hold both pads for a second to recalibrate.</p>
+  <h3>Nothing happens when I move</h3>
+  <p>Use the <a href="#test">browser tester</a> above. If it shows messages, Tarsier is working: check that your music software is listening to MIDI channel 1 and has an instrument loaded.</p>
+</section>
+
+<section id="more">
+  <h2>Customise and contribute</h2>
+  <p>Every setting can be changed in <a href="https://github.com/designerzen/Tarsier/blob/master/firmware/Tarsier/config.h"><code>config.h</code></a>, including the MIDI channel, key, scales, beam length, sensitivity and brightness. The <a href="https://github.com/designerzen/Tarsier#readme">README</a> explains how to build your own version.</p>
+  <p>Tarsier is free software under the <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU AGPL v3.0</a>. Use it, change it and share it. If you share it, share your changes under the same licence.</p>
+</section>
+
+<footer>
+  Tarsier, a <a href="https://www.drakemusic.org/">Drake Music</a> project · <a href="https://github.com/designerzen/Tarsier">GitHub</a>
+</footer>
+
+</main>
+
+<script>
+  // Small Web MIDI monitor so people can check their Tarsier works.
+  (function () {
+    const startButton = document.getElementById("monitor-start");
+    const statusEl = document.getElementById("monitor-status");
+    const logEl = document.getElementById("monitor-log");
+    const meterEl = document.getElementById("monitor-meter");
+    const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    let lines = [];
+
+    function log(text) {
+      lines.push(text);
+      if (lines.length > 60) lines = lines.slice(-60);
+      logEl.textContent = lines.join("\n");
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function noteName(n) { return NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1); }
+
+    function describe(data) {
+      const [status, a, b] = data;
+      const type = status & 0xf0, channel = (status & 0x0f) + 1;
+      if (type === 0x90 && b > 0) { meterEl.style.width = (b / 127 * 100) + "%"; return `note on   ${noteName(a).padEnd(4)} velocity ${b}   (ch ${channel})`; }
+      if (type === 0x80 || type === 0x90) return `note off  ${noteName(a)}   (ch ${channel})`;
+      if (type === 0xb0) { meterEl.style.width = (b / 127 * 100) + "%"; return `CC ${a} = ${b}   (ch ${channel})`; }
+      if (type === 0xe0) { const v = (b << 7) | a; meterEl.style.width = ((v - 8192) / 8191 * 100) + "%"; return `pitch bend ${v - 8192}   (ch ${channel})`; }
+      return null;
+    }
+
+    function refresh(access) {
+      const inputs = [...access.inputs.values()];
+      const tarsier = inputs.filter(i => /tarsier/i.test(i.name));
+      const listening = tarsier.length ? tarsier : inputs;
+      inputs.forEach(i => { i.onmidimessage = null; });
+      listening.forEach(i => {
+        i.onmidimessage = e => { const text = describe(e.data); if (text) log(text); };
+      });
+      if (tarsier.length) {
+        statusEl.textContent = "Tarsier found. Move your hand over the sensor.";
+        statusEl.className = "ok";
+      } else if (inputs.length) {
+        statusEl.textContent = "Tarsier not found. Listening to: " + inputs.map(i => i.name).join(", ");
+        statusEl.className = "";
+      } else {
+        statusEl.textContent = "No MIDI devices found. Is Tarsier plugged in?";
+        statusEl.className = "";
+      }
+    }
+
+    startButton.addEventListener("click", async () => {
+      if (!navigator.requestMIDIAccess) {
+        statusEl.textContent = "This browser can't use MIDI devices. Try Chrome, Edge or Firefox.";
+        return;
+      }
+      try {
+        const access = await navigator.requestMIDIAccess();
+        logEl.textContent = "";
+        lines = [];
+        refresh(access);
+        access.onstatechange = () => refresh(access);
+        startButton.textContent = "Connected";
+        startButton.disabled = true;
+      } catch (err) {
+        statusEl.textContent = "MIDI access was blocked: " + err.message;
+      }
+    });
+  })();
+</script>
+</body>
+</html>
