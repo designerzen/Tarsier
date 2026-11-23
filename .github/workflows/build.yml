@@ -53,3 +53,42 @@ jobs:
           files: |
             build/Tarsier.uf2
             build/Tarsier.ino.bin
+
+  # Publishes site/ to GitHub Pages, with the logo and the firmware just built,
+  # so the page's download link always serves the latest master build.
+  pages:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Tarsier-firmware
+          path: firmware-build
+
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp site/* _site/
+          cp assets/logo.svg assets/logo-small.svg _site/
+          cp firmware-build/Tarsier.uf2 _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
