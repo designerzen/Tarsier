@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Convert a SAMD21 firmware .bin into a .uf2 for drag-and-drop flashing.
 
 Usage: python tools/bin2uf2.py firmware.bin Tarsier.uf2

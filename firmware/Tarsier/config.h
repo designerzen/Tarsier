@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Tarsier: user settings.
 // Everything you might want to tune lives here; the logic is in Tarsier.ino.
 #pragma once

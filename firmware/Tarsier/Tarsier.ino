@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Tarsier: a Soundbeam-style USB MIDI controller for the Adafruit Proximity Trinkey.
 //
 // The APDS9960 proximity sensor projects an invisible "beam" upwards. Moving a
