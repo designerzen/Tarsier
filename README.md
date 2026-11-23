@@ -3,7 +3,11 @@
 # Tarsier
 
 Tarsier is an accessible music instrument you play by moving a hand through the
-air. It began in 2015 as a [Drake Music](https://www.drakemusic.org/) project.
+air. It is an outcome of [DMLab](https://www.drakemusic.org/technology/), the
+research and development arm of [Drake Music](https://www.drakemusic.org/).
+It began in 2015 as an extension of the
+[Tone Ruler](https://www.drakemusic.org/technology/instruments-projects/tone-ruler/) project by Diogo Moreda, a
+portable instrument in the tradition of the Soundbeam.
 This firmware is written specifically for the
 [Adafruit Proximity Trinkey](https://www.adafruit.com/product/5022), a
 USB-stick-sized board with an infrared proximity sensor, two touch pads and two
